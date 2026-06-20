@@ -1,0 +1,126 @@
+# baseline_scores.txt
+
+Retriever: ParentDocumentRetriever (semantic only)
+chunk_size child: 200, parent: 1000
+embedding: all-MiniLM-L6-v2
+
+Query results (Result 1 accuracy):
+Q1 Earned leaves: PASS
+Q2 Notice period leave: PASS  
+Q3 Maternity leave: PASS
+Q4 Working hours: PASS
+Q5 Absent 5 days: PASS
+Q6 Casual leave at once: FAIL
+Q7 Saturday dress code: PASS
+Q8 Report unethical: PARTIAL
+Q9 Carry forward leaves: PASS
+Q10 Late arrivals: PASS
+
+Score: 8/10 (80%)
+
+
+
+
+RAG RETRIEVAL FAILURE ANALYSIS
+================================
+Project: Enterprise RAG - HR Policy PDF
+Baseline Score: 8/10 (80%) - semantic only, no hybrid, no reranking
+
+================================================================
+FAILURE 1: Q6 - "How many casual leaves are allowed at once?"
+================================================================
+
+WHAT HAPPENED:
+- Result 1 retrieved the "absent 5 days = termination" chunk (WRONG)
+- Correct answer was in Result 2: "maximum 3 days casual leave at a time"
+
+ROOT CAUSE: Embedding model confusion
+- Query concepts: leaves + quantity + limit + duration
+- Wrong chunk also had: absence + 5 days + limit
+- Both chunks matched same semantic concepts
+- "casual" is a weak signal for the embedding model
+- Model does not know "casual leave" is a specific HR term
+
+WHY SEMANTIC SEARCH FAILED:
+- Embedding model sees "absent from duty for 5 days" and
+  "casual leaves allowed at once" as semantically similar
+- Both talk about leave limits and duration
+- Cosine similarity was slightly higher for wrong chunk
+
+HOW BM25 FIXES IT:
+- Query tokens: ["casual", "leaves", "allowed", "once"]
+- Wrong chunk has ZERO of these exact words
+- Correct chunk has "casual", "leave", "allowed" as exact matches
+- BM25 score: wrong chunk ~0, correct chunk HIGH
+- After RRF fusion: correct chunk wins
+
+================================================================
+FAILURE 2: Q8 - "How do I report unethical behavior?"
+================================================================
+
+WHAT HAPPENED:
+- Result 1 retrieved list of unethical behavior examples (WRONG)
+- Correct answer was in Result 3: "report to manager then HR Department"
+
+ROOT CAUSE: Topic vs Procedure confusion
+- Query asks HOW TO DO something (procedure)
+- Model retrieved WHAT IT IS (definition/examples)
+
+WHY SEMANTIC SEARCH FAILED:
+- "report unethical behavior" appears near examples of
+  unethical behavior in most training data
+- Model learned: "report unethical behavior" is similar to
+  "examples of unethical behavior"
+- Query vector is geometrically closer to the examples chunk
+  than the reporting procedure chunk
+
+WHY CROSS-ENCODER RERANKER FIXES IT:
+- Bi-encoder (current): embeds query and chunk SEPARATELY
+  Never understands "how do I" means procedure
+- Cross-encoder (reranker): reads query + chunk TOGETHER
+  Understands query asks for a procedure
+  Scores "examples" chunk LOW
+  Scores "report to manager then HR" chunk HIGH
+  Correct chunk wins after reranking
+
+================================================================
+KEY LESSONS
+================================================================
+
+1. Semantic search fails when:
+   - Two chunks share same topic but different intent
+   - Domain-specific terms are treated as general words
+   - Query asks for procedure but document has definition nearby
+
+2. BM25 fixes:
+   - Exact keyword matches that semantic misses
+   - Domain-specific terms like "casual leave"
+   - Works when query words appear literally in correct chunk
+
+3. Cross-encoder reranking fixes:
+   - Topic vs procedure confusion
+   - Cases where semantic retrieves right topic wrong intent
+   - More expensive but understands query+chunk together
+
+================================================================
+IMPROVEMENT PLAN
+================================================================
+
+Step 5: Add hybrid search (BM25 + semantic + RRF)
+        Expected fix: Q6 failure
+        
+Step 6: Add cross-encoder reranking
+        Expected fix: Q8 failure
+
+Target score after both steps: 10/10 (100%)
+
+================================================================
+SCORES TRACKER
+================================================================
+
+After Step 4 (baseline - semantic only):     8/10  (80%)
+After Step 5 (hybrid search):                ?/10
+After Step 6 (reranking):                    ?/10
+After Step 7 (query rewriting):              ?/10
+
+================================================================
