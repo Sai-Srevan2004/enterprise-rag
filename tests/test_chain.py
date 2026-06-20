@@ -1,11 +1,11 @@
-import os
+from pathlib import Path
 from dotenv import load_dotenv
 from indexing.vectorstore import load_retriever, CHROMA_DIR
 from generation.basic_chain import build_basic_chain
 
 load_dotenv()
 
-if not os.path.exists(CHROMA_DIR):
+if not CHROMA_DIR.exists():
     print("ERROR: Index not built yet. Run main.py first.")
     exit()
 

@@ -1,7 +1,7 @@
-import os
+from pathlib import Path
 from indexing.vectorstore import load_retriever, CHROMA_DIR
 
-if not os.path.exists(CHROMA_DIR):
+if not CHROMA_DIR.exists():
     print("ERROR: Index not built yet. Run main.py first.")
     exit()
 

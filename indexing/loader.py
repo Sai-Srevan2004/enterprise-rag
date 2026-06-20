@@ -26,18 +26,10 @@ def load_documents(source_path: str) -> list[Document]:
 def clean_document(doc: Document) -> Document:
     text = doc.page_content
 
-    # Fix hyphenated line breaks
     text = re.sub(r'(\w+)-\n(\w+)', r'\1\2', text)
-
-    # Remove excessive newlines
     text = re.sub(r'\n{3,}', '\n\n', text)
-
-    # Remove excessive spaces
     text = re.sub(r' {2,}', ' ', text)
-
-    # Remove page number patterns
     text = re.sub(r'Page \d+ of \d+', '', text, flags=re.IGNORECASE)
-
     text = text.strip()
 
     return Document(page_content=text, metadata=doc.metadata)

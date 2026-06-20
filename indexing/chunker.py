@@ -29,5 +29,6 @@ def analyze_chunks(chunks: list[Document], label: str = "chunks"):
     tiny = [c for c in chunks if len(c.page_content) < 50]
     print(f"Tiny (<50 chars): {len(tiny)}")
 
+    sample = chunks[5] if len(chunks) > 5 else chunks[0]
     print(f"\nSample chunk:")
-    print(chunks[5].page_content if len(chunks) > 5 else chunks[0].page_content)
+    print(sample.page_content)

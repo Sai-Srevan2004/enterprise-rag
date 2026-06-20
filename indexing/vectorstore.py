@@ -1,17 +1,17 @@
 
-import os
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_chroma import Chroma
 from langchain_classic.retrievers import ParentDocumentRetriever
 from langchain_classic.storage import LocalFileStore
 from langchain_classic.storage import create_kv_docstore
+from pathlib import Path
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from indexing.chunker import get_splitters
 
-# Always points to project root
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CHROMA_DIR = os.path.join(BASE_DIR, "chroma_db")
-DOCSTORE_DIR = os.path.join(BASE_DIR, "docstore")
+# Project root is 2 levels up from this file
+BASE_DIR = Path(__file__).parent.parent
+CHROMA_DIR = BASE_DIR / "chroma_db"
+DOCSTORE_DIR = BASE_DIR / "docstore"
 
 
 def get_embeddings():
@@ -29,11 +29,11 @@ def build_retriever(docs: list[Document]) -> ParentDocumentRetriever:
     vectorstore = Chroma(
         collection_name="child_chunks",
         embedding_function=embeddings,
-        persist_directory=CHROMA_DIR
+        persist_directory=str(CHROMA_DIR)
     )
 
-    os.makedirs(DOCSTORE_DIR, exist_ok=True)
-    fs = LocalFileStore(DOCSTORE_DIR)
+    DOCSTORE_DIR.mkdir(parents=True, exist_ok=True)
+    fs = LocalFileStore(str(DOCSTORE_DIR))
     docstore = create_kv_docstore(fs)
 
     retriever = ParentDocumentRetriever(
@@ -57,10 +57,10 @@ def load_retriever() -> ParentDocumentRetriever:
     vectorstore = Chroma(
         collection_name="child_chunks",
         embedding_function=embeddings,
-        persist_directory=CHROMA_DIR
+        persist_directory=str(CHROMA_DIR)
     )
 
-    fs = LocalFileStore(DOCSTORE_DIR)
+    fs = LocalFileStore(str(DOCSTORE_DIR))
     docstore = create_kv_docstore(fs)
 
     return ParentDocumentRetriever(
