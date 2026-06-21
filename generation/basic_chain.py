@@ -7,10 +7,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 PROMPT = ChatPromptTemplate.from_template("""
-You are an enterprise policy assistant.
+You are an enterprise policy assistant for Rikalp Capital.
 Answer the question based ONLY on the context below.
-Always mention which document your answer comes from.
-If the answer is not in the context, say:
+If the answer is not in the context, say exactly:
 "I don't have enough information in the provided documents to answer this."
 
 Context:
@@ -18,7 +17,14 @@ Context:
 
 Question: {question}
 
-Answer (with source):
+Instructions for your answer:
+- Answer in 1-3 clear sentences
+- End EVERY answer with this exact format on a new line:
+  Source: [filename] | Page: [page number]
+- Never put the source anywhere else
+- Never skip the source line
+
+Answer:
 """)
 
 
@@ -31,7 +37,7 @@ def format_docs(docs):
 
 
 def build_basic_chain(retriever):
-    llm = ChatGroq(model="llama3-8b-8192", temperature=0)
+    llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0)
 
     chain = (
         {"context": retriever | format_docs, "question": RunnablePassthrough()}

@@ -1,11 +1,18 @@
+from indexing.vectorstore import build_retriever, load_retriever, CHROMA_DIR
 from pathlib import Path
-from indexing.vectorstore import load_retriever, CHROMA_DIR
+from indexing.loader import load_and_prepare
+
+BASE_DIR = Path(__file__).parent.parent   # goes up from tests/ to project root
+DATA_DIR = BASE_DIR / "data"              # project root / data
+
 
 if not CHROMA_DIR.exists():
-    print("ERROR: Index not built yet. Run main.py first.")
-    exit()
-
-retriever = load_retriever()
+    print("First time — building index...")
+    docs = load_and_prepare(str(DATA_DIR))
+    retriever = build_retriever(docs)
+else:
+    print("Index found — loading...")
+    retriever = load_retriever()
 
 test_queries = [
     "How many earned leaves do employees get per year?",

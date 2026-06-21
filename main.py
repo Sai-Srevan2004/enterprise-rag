@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 from dotenv import load_dotenv
 from indexing.loader import load_and_prepare
 from indexing.vectorstore import build_retriever, load_retriever, CHROMA_DIR
@@ -6,13 +6,13 @@ from generation.basic_chain import build_basic_chain
 
 load_dotenv()
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(BASE_DIR, "data")
+BASE_DIR = Path(__file__).parent
+DATA_DIR = BASE_DIR / "data"
 
 # ── Build or Load Index ──────────────────────────────────────
-if not os.path.exists(CHROMA_DIR):
+if not CHROMA_DIR.exists():
     print("First time — building index...")
-    docs = load_and_prepare(DATA_DIR)
+    docs = load_and_prepare(str(DATA_DIR))
     retriever = build_retriever(docs)
 else:
     print("Index found — loading...")
